@@ -24,7 +24,7 @@ Specific: System targets freshwater aquariums that have not yet been stocked wit
 
 Measurable: System suggests a limited number of suitable fish compatible based on a limited list of readily available and popular species (15) in the freshwater hobby.
 
-Achievable:System uses a set number of facts and rules to generate a list of suitable fish species (15 and 20 respectively).
+Achievable: System uses a set number of facts and rules to generate a list of suitable fish species (15 and 20 respectively).
 
 Relevant: System is useful for novice hobbyists to help them choose fish species that will be least likely to perish in their new aquarium.
 
