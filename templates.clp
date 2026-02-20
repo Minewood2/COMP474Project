@@ -25,3 +25,21 @@
    (slot temperament-wanted (allowed-symbols peaceful aggressive))
    (slot behavior-wanted (allowed-symbols schooling territorial))
 )
+
+(deftemplate incompatible
+   (slot fish-name)
+   (slot reason)
+)
+
+(deftemplate warning
+   (slot fish-name)
+   (slot reason)
+)
+
+(deftemplate candidate
+   (slot fish-name)
+   (slot tank-size-req (type INTEGER))
+)
+
+(deftemplate printed-recommendations)
+(deftemplate printed-warnings)
