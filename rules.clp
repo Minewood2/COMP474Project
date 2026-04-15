@@ -2,7 +2,7 @@
 ; Fish Advisor
 ; Group Chen-Ambayec (group ID: 360204)
 ; COMP 474
-; February 20, 2026
+; April 15, 2026
 
 
 (deffunction ask-user ()
@@ -88,7 +88,6 @@
                          (reason "Water too soft (hardness below requirement)")))
 )
 
-
 ; Rule 6: Tank too small
 (defrule tank-too-small
    (user (tank-size ?ts))
@@ -134,7 +133,7 @@
 
 ; Rule 10: Male Betta solitude
 (defrule male-betta-solitude-warning
-   (user)  
+   (user)
    (fish (name ?n))
    (test (eq ?n "Betta splendens (male)"))
    =>
@@ -188,20 +187,20 @@
                     (reason "Warning: aggressive fish in very small tank")))
 )
 
-; Rule 16: Filter – candidate if NO incompatible flags exist for a fish
+; Rule 16: candidate if no incompatible fact exists
 (defrule build-candidate
    (user)
    (fish (name ?n) (tank-size-req ?treq))
    (not (incompatible (fish-name ?n)))
-   (not (candidate (fish-name ?n)))  ; avoid duplicates
+   (not (candidate (fish-name ?n)))
    =>
    (assert (candidate (fish-name ?n)
                       (tank-size-req ?treq)))
 )
 
-; Rule 17: Sensitivity warning: German Blue Rams
+; Rule 17: German Blue Ram sensitivity warning
 (defrule german-blue-ram-warning
-   (user)  
+   (user)
    (fish (name ?n))
    (test (eq ?n "German Blue Rams"))
    =>
@@ -209,69 +208,62 @@
                     (reason "Warning: German Blue Rams are sensitive and need very stable water")))
 )
 
-(deffunction candidate-sort (?c1 ?c2)
-   (< (fact-slot-value ?c1 tank-size-req)
-      (fact-slot-value ?c2 tank-size-req))
-)
-
-; Rules 18 + 19: sort candidates by tank size and print them
-(defrule print-recommendations
+; Print header once if there is at least one candidate
+(defrule print-recommendations-header
    (declare (salience -10))
-   (user)
-   (candidate (fish-name ?any))
-   (not (printed-recommendations))     
+   (candidate)
+   (not (printed-recommendations))
    =>
-   (bind ?cands (find-all-facts ((?c candidate)) TRUE))
-
-
-   (if (= (length$ ?cands) 0) then
-      (return)
-   )
-   (bind ?sorted (sort candidate-sort ?cands))
-
-   (printout t crlf "=== Suitable Fish Species (Recommandation from top to bottom sorted by minimum tank size) ===" crlf)
-
-   (foreach ?c ?sorted
-      (printout t "- "
-                  (fact-slot-value ?c fish-name)
-                  " (min tank "
-                  (fact-slot-value ?c tank-size-req)
-                  " gallons)" crlf)
-   )
-   (printout t crlf)
+   (printout t crlf
+               "=== Suitable Fish Species ===" crlf
+               "Recommended from top to bottom in rule firing order:" crlf)
    (assert (printed-recommendations))
 )
-; Rule 20: No results
+
+; Print each compatible fish one by one
+(defrule print-recommendation-item
+   (declare (salience -11))
+   (candidate (fish-name ?n) (tank-size-req ?t))
+   =>
+   (printout t "- " ?n " (minimum tank size: " ?t " gallons)" crlf)
+)
+
+; If there are no candidates, print once
 (defrule no-results
    (declare (salience -20))
    (user)
-   (not (candidate (fish-name ?n)))
+   (not (candidate))
+   (not (printed-no-results))
    =>
    (printout t crlf "*** No compatible fish found. ***" crlf)
    (printout t "Consider adjusting water chemistry or using a larger aquarium." crlf crlf)
+   (assert (printed-no-results))
 )
 
-; Rule 21: Warnings summary
-(defrule print-warnings
+; Print warning header once
+(defrule print-warnings-header
    (declare (salience -30))
-   (user)
-   (warning (fish-name ?n))
-   (not (printed-warnings))       
+   (warning)
+   (not (printed-warnings))
    =>
-   (bind ?warns (find-all-facts ((?w warning)) TRUE))
-
-   (if (> (length$ ?warns) 0) then
-      (printout t "=== Warnings / Special Considerations ===" crlf)
-      (foreach ?w ?warns
-         (printout t "- "
-                     (fact-slot-value ?w fish-name)
-                     ": "
-                     (fact-slot-value ?w reason)
-                     crlf)
-      )
-      (printout t crlf
-                  "Some of these species may still be kept successfully but require "
-                  "extra care or local expert advice." crlf crlf)
-   )
+   (printout t crlf "=== Warnings / Special Considerations ===" crlf)
    (assert (printed-warnings))
+)
+
+; Print each warning one by one
+(defrule print-warning-item
+   (declare (salience -31))
+   (warning (fish-name ?n) (reason ?r))
+   =>
+   (printout t "- " ?n ": " ?r crlf)
+)
+
+; Final warning note once
+(defrule print-warning-footer
+   (declare (salience -32))
+   (printed-warnings)
+   =>
+   (printout t crlf
+               "Some of these species may still be kept successfully but require extra care or local expert advice."
+               crlf crlf)
 )
