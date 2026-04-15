@@ -21,9 +21,13 @@
    (slot ph (type FLOAT))
    (slot temp (type INTEGER))
    (slot tank-size (type INTEGER))
+   (slot tank-size-cf (type FLOAT))
    (slot hardness (type INTEGER))
+   (slot hardness-cf(type FLOAT))
    (slot temperament-wanted (allowed-symbols peaceful aggressive))
+   (slot temperament-cf (type FLOAT))
    (slot behavior-wanted (allowed-symbols schooling territorial))
+   (slot behavior-cf (type FLOAT))
 )
 
 (deftemplate incompatible
@@ -76,6 +80,25 @@
    (slot explanation)
 )
 
+(deftemplate cf-attribute-score
+   (slot fish-name)
+   (slot attribute)
+   (slot evidence (type FLOAT))
+   (slot rule-cf (type FLOAT))
+   (slot score (type FLOAT))
+   (slot explanation)
+)
+
+(deftemplate cf-final-average
+   (slot fish-name)
+   (slot average (type FLOAT))
+)
+
+(deftemplate cf-final-label
+   (slot fish-name)
+   (slot label)
+)
+
 (deftemplate printed-cf-results)
 
 
@@ -104,6 +127,17 @@
 )
 
 (deftemplate printed-fuzzy-results)
+(deftemplate current-fuzzy-fish
+   (slot fish-name)
+)
+(deftemplate fuzzy-print-done
+   (slot fish-name)
+)
+(deftemplate fuzzy-item-printed
+   (slot fish-name)
+   (slot explanation)
+)
+
 
 (deftemplate printed-recommendations)
 (deftemplate printed-warnings)

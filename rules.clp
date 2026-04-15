@@ -11,6 +11,9 @@
    (printout t "Enter tank size (gallons): ")
    (bind ?tank (read))
 
+   (printout t "Enter confidence for tank size (0.0 to 1.0): ")
+   (bind ?tankcf (read))
+
    (printout t "Enter tap water pH (e.g., 7.2): ")
    (bind ?ph (read))
 
@@ -20,20 +23,33 @@
    (printout t "Enter water hardness in ppm (e.g., 150): ")
    (bind ?hard (read))
 
+   (printout t "Enter confidence for hardness (0.0 to 1.0): ")
+   (bind ?hardcf (read))
+
    (printout t "Desired temperament (peaceful / aggressive): ")
    (bind ?tempPref (read))
 
+   (printout t "Enter confidence for desired temperament (0.0 to 1.0): ")
+   (bind ?tempcf (read))
+
    (printout t "Desired social behavior (schooling / territorial): ")
    (bind ?behPref (read))
+
+   (printout t "Enter confidence for desired behavior (0.0 to 1.0): ")
+   (bind ?behcf (read))
 
    (assert
       (user
          (ph ?ph)
          (temp ?temp)
          (tank-size ?tank)
+         (tank-size-cf ?tankcf)
          (hardness ?hard)
+         (hardness-cf ?hardcf)
          (temperament-wanted ?tempPref)
-         (behavior-wanted ?behPref)))
+         (temperament-cf ?tempcf)
+         (behavior-wanted ?behPref)
+         (behavior-cf ?behcf)))
 )
 
 (defrule initialize-user

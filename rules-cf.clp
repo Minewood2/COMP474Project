@@ -5,225 +5,246 @@
 ; April 15, 2026
 
 
-; Rule 1: likely beginner-friendly
-(defrule cf-beginner-friendly
-   (fish-cf (name ?n) (beginner-friendly-cf ?cf))
-   (test (>= ?cf 0.75))
-   =>
-   (assert (cf-conclusion
-      (fish-name ?n)
-      (hypothesis beginner-friendly)
-      (cf ?cf)
-      (explanation "This species is likely beginner-friendly.")))
-)
 
-
-; Rule 2: likely not beginner-friendly
-(defrule cf-not-beginner-friendly
-   (fish-cf (name ?n) (beginner-friendly-cf ?cf))
-   (test (< ?cf 0.50))
-   =>
-   (assert (cf-conclusion
-      (fish-name ?n)
-      (hypothesis not-beginner-friendly)
-      (cf (- 1 ?cf))
-      (explanation "This species is likely difficult for beginners.")))
-)
-
-
-; Rule 3: likely good for peaceful community
-(defrule cf-peaceful-community-good
-   (fish-cf (name ?n) (peaceful-community-cf ?cf))
-   (test (>= ?cf 0.75))
-   =>
-   (assert (cf-conclusion
-      (fish-name ?n)
-      (hypothesis peaceful-community-good)
-      (cf ?cf)
-      (explanation "This species is likely suitable for peaceful community aquariums.")))
-)
-
-
-; Rule 4: likely poor for peaceful community
-(defrule cf-peaceful-community-poor
-   (fish-cf (name ?n) (peaceful-community-cf ?cf))
-   (test (< ?cf 0.40))
-   =>
-   (assert (cf-conclusion
-      (fish-name ?n)
-      (hypothesis peaceful-community-poor)
-      (cf (- 1 ?cf))
-      (explanation "This species is likely unsuitable for peaceful community aquariums.")))
-)
-
-
-; Rule 5: highly sensitive species
-(defrule cf-high-sensitivity
-   (fish-cf (name ?n) (sensitivity-cf ?cf))
-   (test (>= ?cf 0.80))
-   =>
-   (assert (cf-conclusion
-      (fish-name ?n)
-      (hypothesis highly-sensitive)
-      (cf ?cf)
-      (explanation "This species is highly sensitive to unstable conditions.")))
-)
-
-
-; Rule 6: likely good in small tanks
-(defrule cf-small-tank-success
-   (user (tank-size ?ts))
-   (test (<= ?ts 10))
-   (fish-cf (name ?n) (small-tank-success-cf ?cf))
-   (test (>= ?cf 0.70))
-   =>
-   (assert (cf-conclusion
-      (fish-name ?n)
-      (hypothesis small-tank-likely-success)
-      (cf ?cf)
-      (explanation "This species is likely to do well in a small aquarium.")))
-)
-
-; Rule 7: likely poor in small tanks
-(defrule cf-small-tank-risk
-   (user (tank-size ?ts))
-   (test (<= ?ts 10))
-   (fish-cf (name ?n) (small-tank-success-cf ?cf))
-   (test (< ?cf 0.50))
-   =>
-   (assert (cf-conclusion
-      (fish-name ?n)
-      (hypothesis small-tank-risk)
-      (cf (- 1 ?cf))
-      (explanation "This species is unlikely to thrive in a small aquarium.")))
-)
-
-
-; Rule 8: high territorial risk
-(defrule cf-high-territorial-risk
-   (fish-cf (name ?n) (territorial-risk-cf ?cf))
-   (test (>= ?cf 0.80))
-   =>
-   (assert (cf-conclusion
-      (fish-name ?n)
-      (hypothesis high-territorial-risk)
-      (cf ?cf)
-      (explanation "This species has a high likelihood of territorial conflict.")))
-)
-
-
-; Rule 9: risky for peaceful preference
-(defrule cf-risky-for-peaceful-user
-   (user (temperament-wanted peaceful))
-   (fish-cf (name ?n) (territorial-risk-cf ?cf))
-   (test (>= ?cf 0.70))
-   =>
-   (assert (cf-conclusion
-      (fish-name ?n)
-      (hypothesis risky-for-peaceful-user)
-      (cf ?cf)
-      (explanation "This species is likely risky for a peaceful aquarium.")))
-)
-
-
-; Rule 10: candidate but sensitive
-(defrule cf-candidate-sensitive-warning
+; Rule 1: beginner-friendly score
+(defrule cf-score-beginner-friendly
    (candidate (fish-name ?n))
-   (fish-cf (name ?n) (sensitivity-cf ?cf))
-   (test (>= ?cf 0.80))
+   (fish-cf (name ?n) (beginner-friendly-cf ?rule))
+   (not (cf-attribute-score (fish-name ?n) (attribute beginner-friendly)))
    =>
-   (assert (cf-conclusion
+   (bind ?evidence 1.0)
+   (bind ?score (* ?evidence ?rule))
+
+   (assert (cf-attribute-score
       (fish-name ?n)
-      (hypothesis compatible-but-sensitive)
-      (cf ?cf)
-      (explanation "This species may be compatible, but it is highly sensitive.")))
+      (attribute beginner-friendly)
+      (evidence ?evidence)
+      (rule-cf ?rule)
+      (score ?score)))
 )
 
 
-; Rule 11: High-confidence CF recommendation
-(defrule cf-high-confidence
+; Rule 2: peaceful-community score (peaceful user)
+(defrule cf-score-peaceful-community-peaceful
    (candidate (fish-name ?n))
-   (fish-cf (name ?n)
-            (beginner-friendly-cf ?b)
-            (peaceful-community-cf ?p)
-            (sensitivity-cf ?s))
+   (user (temperament-wanted peaceful) (temperament-cf ?evidence))
+   (fish-cf (name ?n) (peaceful-community-cf ?rule))
+   (not (cf-attribute-score (fish-name ?n) (attribute peaceful-community)))
    =>
-   (bind ?score (/ (+ ?b ?p (- 1 ?s)) 3.0))
-   (if (>= ?score 0.75) then
-      (assert
-         (cf-recommendation
-            (fish-name ?n)
-            (score ?score)
-            (label high-confidence)
-            (explanation "High certainty-factor recommendation."))))
+   (bind ?score (* ?evidence ?rule))
+
+   (assert (cf-attribute-score
+      (fish-name ?n)
+      (attribute peaceful-community)
+      (evidence ?evidence)
+      (rule-cf ?rule)
+      (score ?score)))
 )
 
 
-; Rule 12: Medium-confidence CF recommendation
-(defrule cf-medium-confidence
+; Rule 3: peaceful-community score (aggressive user)
+(defrule cf-score-peaceful-community-aggressive
    (candidate (fish-name ?n))
-   (fish-cf (name ?n)
-            (beginner-friendly-cf ?b)
-            (peaceful-community-cf ?p)
-            (sensitivity-cf ?s))
+   (user (temperament-wanted aggressive) (temperament-cf ?evidence))
+   (fish-cf (name ?n) (peaceful-community-cf ?raw))
+   (not (cf-attribute-score (fish-name ?n) (attribute peaceful-community)))
    =>
-   (bind ?score (/ (+ ?b ?p (- 1 ?s)) 3.0))
-   (if (and (>= ?score 0.50) (< ?score 0.75)) then
-      (assert
-         (cf-recommendation
-            (fish-name ?n)
-            (score ?score)
-            (label medium-confidence)
-            (explanation "Moderate certainty-factor recommendation."))))
+   (bind ?rule (- 0 ?raw))
+   (bind ?score (* ?evidence ?rule))
+
+   (assert (cf-attribute-score
+      (fish-name ?n)
+      (attribute peaceful-community)
+      (evidence ?evidence)
+      (rule-cf ?rule)
+      (score ?score)))
 )
 
 
-; Rule 13: Low-confidence CF recommendation
-(defrule cf-low-confidence
+; Rule 4: sensitivity score (negative factor)
+(defrule cf-score-sensitivity
    (candidate (fish-name ?n))
-   (fish-cf (name ?n)
-            (beginner-friendly-cf ?b)
-            (peaceful-community-cf ?p)
-            (sensitivity-cf ?s))
+   (user (tank-size-cf ?tscf) (hardness-cf ?hcf))
+   (fish-cf (name ?n) (sensitivity-cf ?raw))
+   (not (cf-attribute-score (fish-name ?n) (attribute sensitivity)))
    =>
-   (bind ?score (/ (+ ?b ?p (- 1 ?s)) 3.0))
-   (if (< ?score 0.50) then
-      (assert
-         (cf-recommendation
-            (fish-name ?n)
-            (score ?score)
-            (label low-confidence)
-            (explanation "Low certainty-factor recommendation."))))
+   (bind ?evidence (/ (+ ?tscf ?hcf) 2.0))
+   (bind ?rule (- 0 ?raw))
+   (bind ?score (* ?evidence ?rule))
+
+   (assert (cf-attribute-score
+      (fish-name ?n)
+      (attribute sensitivity)
+      (evidence ?evidence)
+      (rule-cf ?rule)
+      (score ?score)))
+)
+
+
+; Rule 5: small-tank-success score
+(defrule cf-score-small-tank-success
+   (candidate (fish-name ?n))
+   (user (tank-size-cf ?evidence))
+   (fish-cf (name ?n) (small-tank-success-cf ?rule))
+   (not (cf-attribute-score (fish-name ?n) (attribute small-tank-success)))
+   =>
+   (bind ?score (* ?evidence ?rule))
+
+   (assert (cf-attribute-score
+      (fish-name ?n)
+      (attribute small-tank-success)
+      (evidence ?evidence)
+      (rule-cf ?rule)
+      (score ?score)))
+)
+
+
+; Rule 6: territorial-risk score (territorial user)
+(defrule cf-score-territorial-risk-territorial
+   (candidate (fish-name ?n))
+   (user (behavior-wanted territorial) (behavior-cf ?evidence))
+   (fish-cf (name ?n) (territorial-risk-cf ?rule))
+   (not (cf-attribute-score (fish-name ?n) (attribute territorial-risk)))
+   =>
+   (bind ?score (* ?evidence ?rule))
+
+   (assert (cf-attribute-score
+      (fish-name ?n)
+      (attribute territorial-risk)
+      (evidence ?evidence)
+      (rule-cf ?rule)
+      (score ?score)))
+)
+
+
+; Rule 7: territorial-risk score (schooling user)
+(defrule cf-score-territorial-risk-schooling
+   (candidate (fish-name ?n))
+   (user (behavior-wanted schooling) (behavior-cf ?evidence))
+   (fish-cf (name ?n) (territorial-risk-cf ?raw))
+   (not (cf-attribute-score (fish-name ?n) (attribute territorial-risk)))
+   =>
+   (bind ?rule (- 0 ?raw))
+   (bind ?score (* ?evidence ?rule))
+
+   (assert (cf-attribute-score
+      (fish-name ?n)
+      (attribute territorial-risk)
+      (evidence ?evidence)
+      (rule-cf ?rule)
+      (score ?score)))
+)
+
+
+; Rule 8: compute final average CF
+(defrule cf-final-average-rule
+   (candidate (fish-name ?n))
+   (cf-attribute-score (fish-name ?n) (attribute beginner-friendly) (score ?s1))
+   (cf-attribute-score (fish-name ?n) (attribute peaceful-community) (score ?s2))
+   (cf-attribute-score (fish-name ?n) (attribute sensitivity) (score ?s3))
+   (cf-attribute-score (fish-name ?n) (attribute small-tank-success) (score ?s4))
+   (cf-attribute-score (fish-name ?n) (attribute territorial-risk) (score ?s5))
+   (not (cf-final-average (fish-name ?n)))
+   =>
+   (bind ?avg (/ (+ ?s1 ?s2 ?s3 ?s4 ?s5) 5.0))
+
+   (assert (cf-final-average
+      (fish-name ?n)
+      (average ?avg)))
+)
+
+
+; Rule 9: assign high-confidence label
+(defrule cf-label-high
+   (cf-final-average (fish-name ?n) (average ?avg))
+   (test (>= ?avg 0.5))
+   (not (cf-final-label (fish-name ?n)))
+   =>
+   (assert (cf-final-label (fish-name ?n) (label high-confidence)))
+)
+
+
+; Rule 10: assign medium-confidence label
+(defrule cf-label-medium
+   (cf-final-average (fish-name ?n) (average ?avg))
+   (test (and (>= ?avg 0.0) (< ?avg 0.5)))
+   (not (cf-final-label (fish-name ?n)))
+   =>
+   (assert (cf-final-label (fish-name ?n) (label medium-confidence)))
+)
+
+
+; Rule 11: assign low-confidence label
+(defrule cf-label-low
+   (cf-final-average (fish-name ?n) (average ?avg))
+   (test (< ?avg 0.0))
+   (not (cf-final-label (fish-name ?n)))
+   =>
+   (assert (cf-final-label (fish-name ?n) (label low-confidence)))
 )
 
 
 
+; Print header once
 (defrule print-cf-header
    (declare (salience -60))
-   (cf-recommendation)
+   (cf-final-average)
    (not (printed-cf-results))
    =>
-   (printout t "=== Certainty Factor Recommendations ===" crlf crlf)
+   (printout t crlf "=== CF Scores for Compatible Fish ===" crlf crlf)
    (assert (printed-cf-results))
 )
 
-(defrule print-cf-item
+
+; Print one neat block per fish
+(defrule print-cf-block
    (declare (salience -61))
-   (cf-recommendation
+
+   (cf-final-average (fish-name ?n) (average ?avg))
+   (cf-final-label (fish-name ?n) (label ?label))
+
+   (cf-attribute-score
       (fish-name ?n)
-      (score ?s)
-      (label ?l)
-      (explanation ?e))
+      (attribute beginner-friendly)
+      (evidence ?e1)
+      (rule-cf ?r1)
+      (score ?s1))
+
+   (cf-attribute-score
+      (fish-name ?n)
+      (attribute peaceful-community)
+      (evidence ?e2)
+      (rule-cf ?r2)
+      (score ?s2))
+
+   (cf-attribute-score
+      (fish-name ?n)
+      (attribute sensitivity)
+      (evidence ?e3)
+      (rule-cf ?r3)
+      (score ?s3))
+
+   (cf-attribute-score
+      (fish-name ?n)
+      (attribute small-tank-success)
+      (evidence ?e4)
+      (rule-cf ?r4)
+      (score ?s4))
+
+   (cf-attribute-score
+      (fish-name ?n)
+      (attribute territorial-risk)
+      (evidence ?e5)
+      (rule-cf ?r5)
+      (score ?s5))
    =>
-   (printout t "- " ?n
-               " -> "
-               ?l
-               " recommendation"
-               " (CF score = "
-               ?s
-               ")"
-               crlf
-               "  Reason: "
-               ?e
-               crlf)
+   (printout t "Fish: " ?n crlf)
+   (printout t "  beginner-friendly:  " ?e1 " * " ?r1 " = " ?s1 crlf)
+   (printout t "  peaceful-community: " ?e2 " * " ?r2 " = " ?s2 crlf)
+   (printout t "  sensitivity:        " ?e3 " * " ?r3 " = " ?s3 crlf)
+   (printout t "  small-tank-success: " ?e4 " * " ?r4 " = " ?s4 crlf)
+   (printout t "  territorial-risk:   " ?e5 " * " ?r5 " = " ?s5 crlf)
+   (printout t "  ----------------------------------------" crlf)
+   (printout t "  average-cf-score:   " ?avg crlf)
+   (printout t "  label:              " ?label crlf crlf)
 )

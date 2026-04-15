@@ -234,7 +234,7 @@
          (explanation "Good fuzzy fit for the selected temperature range.")))
 )
 
-
+; Print header once
 (defrule print-fuzzy-header
    (declare (salience -70))
    (fuzzy-recommendation)
@@ -244,33 +244,67 @@
    (assert (printed-fuzzy-results))
 )
 
-(defrule print-fuzzy-item
+
+; Start one fish block at a time
+(defrule start-fuzzy-fish-block
    (declare (salience -71))
+   (printed-fuzzy-results)
+   (not (current-fuzzy-fish (fish-name ?x)))
+   (fuzzy-recommendation (fish-name ?n))
+   (not (fuzzy-print-done (fish-name ?n)))
+   =>
+   (printout t "Fish: " ?n crlf)
+   (assert (current-fuzzy-fish (fish-name ?n)))
+)
+
+
+; Print recommendation lines only for the current fish
+(defrule print-fuzzy-item-line
+   (declare (salience -72))
+   (current-fuzzy-fish (fish-name ?n))
    (fuzzy-recommendation
       (fish-name ?n)
       (suitability ?s)
       (degree ?d)
       (explanation ?e))
+   (not (fuzzy-item-printed (fish-name ?n) (explanation ?e)))
    =>
-   (printout t "- "
-               ?n
-               " -> "
-               ?s
-               " suitability"
-               " (degree = "
-               ?d
-               ")"
-               crlf
-               "  Reason: "
-               ?e
-               crlf)
+   (printout t
+      "  - "
+      ?s
+      " ("
+      ?d
+      "): "
+      ?e
+      crlf)
+   (assert (fuzzy-item-printed (fish-name ?n) (explanation ?e)))
 )
 
-(defrule print-fuzzy-footer
-   (declare (salience -72))
-   (printed-fuzzy-results)
+
+; Close the current fish block when all its lines are printed
+(defrule end-fuzzy-fish-block
+   (declare (salience -73))
+   ?c <- (current-fuzzy-fish (fish-name ?n))
+   (not (and
+         (fuzzy-recommendation (fish-name ?n) (explanation ?e))
+         (not (fuzzy-item-printed (fish-name ?n) (explanation ?e)))))
    =>
-   (printout t crlf
-               "Fuzzy suitability expresses degree of fit rather than strict yes/no logic."
-               crlf crlf)
+   (printout t crlf)
+   (assert (fuzzy-print-done (fish-name ?n)))
+   (retract ?c)
+)
+
+
+; Final footer after all fish blocks are done
+(defrule print-fuzzy-footer
+   (declare (salience -74))
+   (printed-fuzzy-results)
+   (not (current-fuzzy-fish (fish-name ?x)))
+   (not (and
+         (fuzzy-recommendation (fish-name ?n))
+         (not (fuzzy-print-done (fish-name ?n)))))
+   =>
+   (printout t
+      "Fuzzy suitability expresses degree of fit rather than strict yes/no logic."
+      crlf crlf)
 )
